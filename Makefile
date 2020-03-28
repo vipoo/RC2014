@@ -76,6 +76,11 @@ clean:
 	(cd lib65c816; make clean)
 	rm -f *.o *~ rc2014 rbcv2
 
+.PHONY: format
+
+format:
+	clang-format --verbose -i ./*.c ./*.h ./**/*.c ./**/*.h
+
 SRCS := $(subst ./,,$(shell find -name '*.c'))
 DEPDIR := .deps
 DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d

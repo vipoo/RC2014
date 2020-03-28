@@ -27,96 +27,93 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  *
  * SOFTWARE.                                                                      *
  **********************************************************************************/
+#include <ctype.h>
+#include <errno.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-#include <ctype.h>
-#include <errno.h>
 
-#define VERSION_INFO "v2.1"
+#define VERSION_INFO   "v2.1"
 #define NUMBER_OPCODES 151
 
 struct symbol {
-    struct symbol *next;
-    uint16_t addr;
-    char type[4];
-    char name[];
+  struct symbol *next;
+  uint16_t       addr;
+  char           type[4];
+  char           name[];
 };
 
 struct symbol *symhash[256];
 
-void insert_symbol(const char *name, uint16_t addr, const char *type)
-{
-    struct symbol *s = malloc(sizeof(struct symbol) + strlen(name) + 1);
-    if (s == NULL) {
-        fprintf(stderr, "Out of memory.\n");
-        exit(1);
-    }
-    s->addr = addr;
-    memcpy(s->type, type, 3);
-    s->type[3] = 0;
-    strcpy(s->name, name);
-    s->next = symhash[addr & 255];
-    symhash[addr & 255] = s;
+void insert_symbol(const char *name, uint16_t addr, const char *type) {
+  struct symbol *s = malloc(sizeof(struct symbol) + strlen(name) + 1);
+  if (s == NULL) {
+    fprintf(stderr, "Out of memory.\n");
+    exit(1);
+  }
+  s->addr = addr;
+  memcpy(s->type, type, 3);
+  s->type[3] = 0;
+  strcpy(s->name, name);
+  s->next             = symhash[addr & 255];
+  symhash[addr & 255] = s;
 }
 
-struct symbol *find_symbol(uint16_t addr)
-{
-    struct symbol *s = symhash[addr & 255];
-    while(s) {
-        if (s->addr == addr)
-            return s;
-        s = s->next;
-    }
-    return NULL;
+struct symbol *find_symbol(uint16_t addr) {
+  struct symbol *s = symhash[addr & 255];
+  while (s) {
+    if (s->addr == addr)
+      return s;
+    s = s->next;
+  }
+  return NULL;
 }
 
-void load_symbols(void)
-{
-    FILE *fp = fopen("6502.sym", "r");
-    char buf[128];
-    char *n, *ap, *t;
-    int line = 0;
+void load_symbols(void) {
+  FILE *fp = fopen("6502.sym", "r");
+  char  buf[128];
+  char *n, *ap, *t;
+  int   line = 0;
 
-    if (fp == NULL)
-        return;
-    fprintf(stderr, "[Loading symbols]\n");
-    while(fgets(buf, 127, fp)) {
-        line++;
-        n = strtok(buf, " ");
-        ap = strtok(NULL, " ");
-        t = strtok(NULL, " \n");
-        if (n == NULL || ap == NULL || t == NULL) {
-            fprintf(stderr, "line %d: malformed symbol entry.\n", line);
-        } else {
-            uint16_t addr;
-            addr = strtoul(ap, NULL, 16);
-            insert_symbol(n, addr, t);
-        }
+  if (fp == NULL)
+    return;
+  fprintf(stderr, "[Loading symbols]\n");
+  while (fgets(buf, 127, fp)) {
+    line++;
+    n  = strtok(buf, " ");
+    ap = strtok(NULL, " ");
+    t  = strtok(NULL, " \n");
+    if (n == NULL || ap == NULL || t == NULL) {
+      fprintf(stderr, "line %d: malformed symbol entry.\n", line);
+    } else {
+      uint16_t addr;
+      addr = strtoul(ap, NULL, 16);
+      insert_symbol(n, addr, t);
     }
-    fclose(fp);
+  }
+  fclose(fp);
 }
 
 /* Exceptions for cycle counting */
-#define CYCLES_CROSS_PAGE_ADDS_ONE      (1 << 0)
-#define CYCLES_BRANCH_TAKEN_ADDS_ONE    (1 << 1)
+#define CYCLES_CROSS_PAGE_ADDS_ONE   (1 << 0)
+#define CYCLES_BRANCH_TAKEN_ADDS_ONE (1 << 1)
 
 /* The 6502's 13 addressing modes */
 typedef enum {
-    IMMED = 0, /* Immediate */
-    ABSOL, /* Absolute */
-    ZEROP, /* Zero Page */
-    IMPLI, /* Implied */
-    INDIA, /* Indirect Absolute */
-    ABSIX, /* Absolute indexed with X */
-    ABSIY, /* Absolute indexed with Y */
-    ZEPIX, /* Zero page indexed with X */
-    ZEPIY, /* Zero page indexed with Y */
-    INDIN, /* Indexed indirect (with X) */
-    ININD, /* Indirect indexed (with Y) */
-    RELAT, /* Relative */
-    ACCUM /* Accumulator */
+  IMMED = 0, /* Immediate */
+  ABSOL,     /* Absolute */
+  ZEROP,     /* Zero Page */
+  IMPLI,     /* Implied */
+  INDIA,     /* Indirect Absolute */
+  ABSIX,     /* Absolute indexed with X */
+  ABSIY,     /* Absolute indexed with Y */
+  ZEPIX,     /* Zero page indexed with X */
+  ZEPIY,     /* Zero page indexed with Y */
+  INDIN,     /* Indexed indirect (with X) */
+  ININD,     /* Indirect indexed (with Y) */
+  RELAT,     /* Relative */
+  ACCUM      /* Accumulator */
 } addressing_mode_e;
 
 /** Some compilers don't have EOK in errno.h */
@@ -125,11 +122,11 @@ typedef enum {
 #endif
 
 typedef struct opcode_s {
-    uint8_t number; /* Number of the opcode */
-    const char *mnemonic; /* Index in the name table */
-    addressing_mode_e addressing; /* Addressing mode */
-    unsigned int cycles; /* Number of cycles */
-    unsigned int cycles_exceptions; /* Mask of cycle-counting exceptions */
+  uint8_t           number;            /* Number of the opcode */
+  const char *      mnemonic;          /* Index in the name table */
+  addressing_mode_e addressing;        /* Addressing mode */
+  unsigned int      cycles;            /* Number of cycles */
+  unsigned int      cycles_exceptions; /* Mask of cycle-counting exceptions */
 } opcode_t;
 
 /* Opcode table */
@@ -343,158 +340,153 @@ static opcode_t opcodes[NUMBER_OPCODES] = {
 };
 
 static void append_rc2014(char *input, char *lead, uint16_t arg, char *tail) {
-    struct symbol *s = find_symbol(arg);
-    int pn = 0;
-    if (s == NULL) {
-        s = find_symbol(arg - 1);
-        if (s == NULL)
-            return;
-        pn = 1;
-    }
-    strcat(input, "; ");
-    strcat(input, lead);
-    strcat(input, s->name);
-    if (pn)
-        strcat(input, "+1");
-    strcat(input, tail);
+  struct symbol *s  = find_symbol(arg);
+  int            pn = 0;
+  if (s == NULL) {
+    s = find_symbol(arg - 1);
+    if (s == NULL)
+      return;
+    pn = 1;
+  }
+  strcat(input, "; ");
+  strcat(input, lead);
+  strcat(input, s->name);
+  if (pn)
+    strcat(input, "+1");
+  strcat(input, tail);
 }
 
 /* Helper macros for disassemble() function */
-#define HIGH_PART(val) (((val) >> 8) & 0xFFu)
-#define LOW_PART(val) ((val) & 0xFFu)
+#define HIGH_PART(val)    (((val) >> 8) & 0xFFu)
+#define LOW_PART(val)     ((val)&0xFFu)
 #define LOAD_WORD(buffer) ((uint16_t)buffer[1] | (((uint16_t)buffer[2]) << 8))
 
 /* This function disassembles the opcode at the PC and outputs it in *output */
 static void disassemble(char *output, uint16_t current_addr, uint8_t *buffer) {
-    int opcode_idx;
-    int entry = 0;
-    int found = 0;
-    uint8_t byte_operand = buffer[1];
-    uint16_t word_operand = LOAD_WORD(buffer);
-    uint8_t opcode = *buffer;
-    const char *mnemonic;
-    struct symbol *cs = find_symbol(current_addr);
+  int            opcode_idx;
+  int            entry        = 0;
+  int            found        = 0;
+  uint8_t        byte_operand = buffer[1];
+  uint16_t       word_operand = LOAD_WORD(buffer);
+  uint8_t        opcode       = *buffer;
+  const char *   mnemonic;
+  struct symbol *cs = find_symbol(current_addr);
 
-
-    // Linear search for opcode
-    /* FIXME: should be a 256 element ordered table ! */
-    for (opcode_idx = 0; opcode_idx < NUMBER_OPCODES; opcode_idx++) {
-        if (opcode == opcodes[opcode_idx].number) {
-            /* Found the opcode, record its table index */
-            found = 1;
-            entry = opcode_idx;
-        }
+  // Linear search for opcode
+  /* FIXME: should be a 256 element ordered table ! */
+  for (opcode_idx = 0; opcode_idx < NUMBER_OPCODES; opcode_idx++) {
+    if (opcode == opcodes[opcode_idx].number) {
+      /* Found the opcode, record its table index */
+      found = 1;
+      entry = opcode_idx;
     }
+  }
 
-    // For opcode not found, terminate early
-    if (!found) {
-        sprintf(output, ".byte $%02X ; invalid", opcode);
-        return;
-    }
+  // For opcode not found, terminate early
+  if (!found) {
+    sprintf(output, ".byte $%02X ; invalid", opcode);
+    return;
+  }
 
-    // Opcode found in table: disassemble properly according to addressing mode
-    mnemonic = opcodes[entry].mnemonic;
+  // Opcode found in table: disassemble properly according to addressing mode
+  mnemonic = opcodes[entry].mnemonic;
 
-    switch (opcodes[entry].addressing) {
-        case IMMED:
-            /* Get immediate value operand */
-            sprintf(output, "%s #$%02X", mnemonic, byte_operand);
-            break;
-        case ABSOL:
-            /* Get absolute address operand */
-            sprintf(output, "%s $%02X%02X", mnemonic, HIGH_PART(word_operand), LOW_PART(word_operand));
-            break;
-        case ZEROP:
-            /* Get zero page address */
-            sprintf(output, "%s $%02X", mnemonic, byte_operand);
-            break;
-        case IMPLI:
-            sprintf(output, "%s", mnemonic);
-            break;
-        case INDIA:
-            /* Get indirection address */
-            sprintf(output, "%s ($%02X%02X)", mnemonic, HIGH_PART(word_operand), LOW_PART(word_operand));
-            break;
-        case ABSIX:
-            /* Get base address */
-            sprintf(output, "%s $%02X%02X,X", mnemonic, HIGH_PART(word_operand), LOW_PART(word_operand));
-            break;
-        case ABSIY:
-            /* Get baser address */
-            sprintf(output, "%s $%02X%02X,Y", mnemonic, HIGH_PART(word_operand), LOW_PART(word_operand));
-            break;
-        case ZEPIX:
-            /* Get zero-page base address */
-            sprintf(output, "%s $%02X,X", mnemonic, byte_operand);
-            break;
-        case ZEPIY:
-            /* Get zero-page base address */
-            sprintf(output, "%s $%02X,Y", mnemonic, byte_operand);
-            break;
-        case INDIN:
-            /* Get zero-page base address */
-            sprintf(output, "%s ($%02X,X)", mnemonic, byte_operand);
-            break;
-        case ININD:
-            /* Get zero-page base address */
-            sprintf(output, "%s ($%02X),Y", mnemonic, byte_operand);
-            break;
-        case RELAT:
-            /* Get relative modifier */
-            // Compute displacement from first byte after full instruction.
-            word_operand = current_addr + 2;
-            if (byte_operand > 0x7Fu)
-                word_operand -= ((~byte_operand & 0x7Fu) + 1);
-            else
-                word_operand += byte_operand & 0x7Fu;
-            sprintf(output, "%s $%04X", mnemonic, word_operand);
-            break;
-        case ACCUM:
-            sprintf(output, "%s A", mnemonic);
-            break;
-        default:
-            // Will not happen since each entry in opcode_table has address mode set
-            break;
-    }
+  switch (opcodes[entry].addressing) {
+  case IMMED:
+    /* Get immediate value operand */
+    sprintf(output, "%s #$%02X", mnemonic, byte_operand);
+    break;
+  case ABSOL:
+    /* Get absolute address operand */
+    sprintf(output, "%s $%02X%02X", mnemonic, HIGH_PART(word_operand), LOW_PART(word_operand));
+    break;
+  case ZEROP:
+    /* Get zero page address */
+    sprintf(output, "%s $%02X", mnemonic, byte_operand);
+    break;
+  case IMPLI:
+    sprintf(output, "%s", mnemonic);
+    break;
+  case INDIA:
+    /* Get indirection address */
+    sprintf(output, "%s ($%02X%02X)", mnemonic, HIGH_PART(word_operand), LOW_PART(word_operand));
+    break;
+  case ABSIX:
+    /* Get base address */
+    sprintf(output, "%s $%02X%02X,X", mnemonic, HIGH_PART(word_operand), LOW_PART(word_operand));
+    break;
+  case ABSIY:
+    /* Get baser address */
+    sprintf(output, "%s $%02X%02X,Y", mnemonic, HIGH_PART(word_operand), LOW_PART(word_operand));
+    break;
+  case ZEPIX:
+    /* Get zero-page base address */
+    sprintf(output, "%s $%02X,X", mnemonic, byte_operand);
+    break;
+  case ZEPIY:
+    /* Get zero-page base address */
+    sprintf(output, "%s $%02X,Y", mnemonic, byte_operand);
+    break;
+  case INDIN:
+    /* Get zero-page base address */
+    sprintf(output, "%s ($%02X,X)", mnemonic, byte_operand);
+    break;
+  case ININD:
+    /* Get zero-page base address */
+    sprintf(output, "%s ($%02X),Y", mnemonic, byte_operand);
+    break;
+  case RELAT:
+    /* Get relative modifier */
+    // Compute displacement from first byte after full instruction.
+    word_operand = current_addr + 2;
+    if (byte_operand > 0x7Fu)
+      word_operand -= ((~byte_operand & 0x7Fu) + 1);
+    else
+      word_operand += byte_operand & 0x7Fu;
+    sprintf(output, "%s $%04X", mnemonic, word_operand);
+    break;
+  case ACCUM:
+    sprintf(output, "%s A", mnemonic);
+    break;
+  default:
+    // Will not happen since each entry in opcode_table has address mode set
+    break;
+  }
 
-    if (cs)
-        sprintf(output + strlen(output), ";[%s] ", cs->name);
+  if (cs)
+    sprintf(output + strlen(output), ";[%s] ", cs->name);
 
-    switch (opcodes[entry].addressing) {
-        case RELAT:
-        case ABSOL:
-        case ABSIX:
-        case ABSIY:
-            append_rc2014(output, "", word_operand, "");
-            break;
-       case ZEROP:
-            append_rc2014(output, "", byte_operand, "");
-            break;
-       case ZEPIX:
-            append_rc2014(output, "", byte_operand, ",X");
-            break;
-       case ZEPIY:
-            append_rc2014(output, "", byte_operand, ",Y");
-            break;
-        case INDIN:
-            append_rc2014(output, "(", byte_operand, ",X)");
-            break;
-        case ININD:
-            append_rc2014(output, "(", byte_operand, "),Y");
-            break;
-        default:
-            break;
-    }
+  switch (opcodes[entry].addressing) {
+  case RELAT:
+  case ABSOL:
+  case ABSIX:
+  case ABSIY:
+    append_rc2014(output, "", word_operand, "");
+    break;
+  case ZEROP:
+    append_rc2014(output, "", byte_operand, "");
+    break;
+  case ZEPIX:
+    append_rc2014(output, "", byte_operand, ",X");
+    break;
+  case ZEPIY:
+    append_rc2014(output, "", byte_operand, ",Y");
+    break;
+  case INDIN:
+    append_rc2014(output, "(", byte_operand, ",X)");
+    break;
+  case ININD:
+    append_rc2014(output, "(", byte_operand, "),Y");
+    break;
+  default:
+    break;
+  }
 }
 
-char *dis6502(uint16_t current_addr, uint8_t *istream)
-{
-    static char buf[128];
-    disassemble(buf, current_addr, istream);
-    return buf;
+char *dis6502(uint16_t current_addr, uint8_t *istream) {
+  static char buf[128];
+  disassemble(buf, current_addr, istream);
+  return buf;
 }
 
-void disassembler_init(void)
-{
-    load_symbols();
-}
+void disassembler_init(void) { load_symbols(); }
