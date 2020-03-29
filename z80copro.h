@@ -1,8 +1,8 @@
 #ifndef __Z80COPRO_H
 #define __Z80COPRO_H
 
-#include <stdint.h>
 #include "libz80/z80.h"
+#include <stdint.h>
 
 struct z80copro {
   Z80Context cpu;

@@ -1094,10 +1094,10 @@ static void reti_event(void) {
   if (intdis)
     return;
 
-  if(sio2_check_im2(sio))
+  if (sio2_check_im2(sio))
     return;
 
-  if(sio2_check_im2(sio + 1))
+  if (sio2_check_im2(sio + 1))
     return;
 
   ctc_check_im2();

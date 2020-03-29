@@ -1432,7 +1432,8 @@ void pio_strobe(struct z80_pio *pio, uint8_t port) {}
 
 uint8_t pio_data_read(struct z80_pio *pio, uint8_t port) { return pio->in[port]; }
 
-static void pio_recalc(void) { /* For now we don't model interrupts at all */ }
+static void pio_recalc(void) { /* For now we don't model interrupts at all */
+}
 
 /* Simple Z80 PIO model. We don't yet deal with the fancy bidirectional mode
    or the strobes in mode 0-2. We don't do interrupt mask triggers on mode 3 */
@@ -2030,8 +2031,8 @@ static void poll_irq_event(void) {
       acia_check_irq(acia);
     uart_check_irq(&uart[0]);
     if (!live_irq) {
-      if(!sio2_check_im2(sio))
-        if(!sio2_check_im2(sio + 1))
+      if (!sio2_check_im2(sio))
+        if (!sio2_check_im2(sio + 1))
           ctc_check_im2();
     }
   } else {
