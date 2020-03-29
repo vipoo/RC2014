@@ -1091,7 +1091,16 @@ static void reti_event(void) {
   live_irq = 0;
 
   /* See who delivers next */
-  !intdis && !sio2_check_im2(sio) && !sio2_check_im2(sio + 1) && !ctc_check_im2();
+  if (intdis)
+    return;
+
+  if(sio2_check_im2(sio))
+    return;
+
+  if(sio2_check_im2(sio + 1))
+    return;
+
+  ctc_check_im2();
 
   /* If nothing is pending we end up here and we continue with live_irq
      clear. A call to recalc_interrupts will then trigger the interrupt

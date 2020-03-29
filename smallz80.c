@@ -425,6 +425,7 @@ uint8_t do_rtc_read(uint8_t addr) {
   case 15:
     return 4;
   }
+  #pragma GCC diagnostic ignored "-Wreturn-type"
 }
 
 uint8_t rtc_read(uint8_t addr) {
