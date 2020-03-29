@@ -37,7 +37,7 @@ rc2014-65c816-mini: rc2014-65c816-mini.o 6502.o 6502dis.o
 	cc -g3 rc2014-65c816-mini.o ide.o w5100.o lib65c816/src/lib65816.a -o rc2014-65c816-mini
 
 rc2014-65c816-mini.o: rc2014-65c816-mini.c
-	(cd lib65c816; make)
+	$(MAKE) --directory lib65c816 && \
 	$(CC) $(CFLAGS) -Ilib65c816 -c rc2014-65c816-mini.c
 
 rc2014-8085: rc2014-8085.o intel_8085_emulator.o ide.o acia.o w5100.o ppide.o rtc_bitbang.o
