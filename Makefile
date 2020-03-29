@@ -37,9 +37,11 @@ rc2014-65c816-mini: rc2014-65c816-mini.o 6502.o 6502dis.o lib65c816/src/lib65816
 
 #.PHONY: lib65c816/src/lib65816.a
 lib65c816/src/lib65816.a:
-	$(MAKE) --directory lib65c816
+	$(MAKE) --directory lib65c816 -j 1
 
-rc2014-65c816-mini.o: rc2014-65c816-mini.c
+lib65816/config.h: lib65c816/src/lib65816.a
+
+rc2014-65c816-mini.o: rc2014-65c816-mini.c lib65816/config.h
 	$(CC) $(CFLAGS) -Ilib65c816 -c rc2014-65c816-mini.c
 
 rc2014-8085: rc2014-8085.o intel_8085_emulator.o ide.o acia.o w5100.o ppide.o rtc_bitbang.o
@@ -93,6 +95,7 @@ $(DEPDIR): ; @mkdir -p $@
 DEPFILES := $(SRCS:%.c=$(DEPDIR)/%.d)
 $(DEPFILES):
 
-libz80/libz80.o: libz80/z80.c libz80/z80.h
+libz80/libz80.o: libz80/z80.c libz80/z80.h lib65816/config.h
+cpu.c: lib65816/config.h
 
 include $(wildcard $(DEPFILES))
