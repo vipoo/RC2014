@@ -4,9 +4,8 @@ CFLAGS = -Wall -pedantic -Werror
 all:	rc2014 rc2014-1802 rc2014-6303 rc2014-6502 rc2014-65c816-mini rc2014-80c188 rc2014-8085 \
 	rbcv2 searle linc80 makedisk mbc2 smallz80 sbc2g z80mc simple80
 
-rc2014:	rc2014.o acia.o ide.o ppide.o rtc_bitbang.o w5100.o z80dma.o z80copro.o
-	$(MAKE) --directory libz80 && \
-	cc -g3 rc2014.o acia.o ide.o ppide.o rtc_bitbang.o w5100.o z80dma.o z80copro.o libz80/libz80.o -o rc2014
+rc2014:	rc2014.o acia.o ide.o ppide.o rtc_bitbang.o w5100.o z80dma.o z80copro.o port_tracing.o libz80/libz80.o
+	$(CC) -g3 rc2014.o acia.o ide.o ppide.o rtc_bitbang.o w5100.o z80dma.o z80copro.o libz80/libz80.o port_tracing.o -o rc2014
 
 libz80/libz80.o:
 	$(MAKE) --directory libz80

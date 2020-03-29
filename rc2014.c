@@ -46,6 +46,8 @@
 #include "w5100.h"
 #include "z80copro.h"
 #include "z80dma.h"
+#include "port_tracing.h"
+
 
 static uint8_t ramrom[1024 * 1024]; /* Covers the banked card */
 
@@ -1750,8 +1752,14 @@ static uint8_t io_read_2014(uint16_t addr) {
 }
 
 static void io_write_2014(uint16_t addr, uint8_t val, uint8_t known) {
+  int i = 0;
+
   if (trace & TRACE_IO)
     fprintf(stderr, "write %02x <- %02x\n", addr, val);
+
+  for(i = 0; i < countOfPortsToTrace; i++)
+    if(portsToTrace[i] == (addr & 0xFF))
+      printf("PORT OUT: %02X, %02X\n", addr & 0xFF, val);
 
   if (copro && (addr & 0xFC) == 0xBC) {
     z80copro_iowrite(copro, addr, val);
@@ -2096,6 +2104,7 @@ static void usage(void) {
   exit(EXIT_FAILURE);
 }
 
+
 int main(int argc, char *argv[]) {
   static struct timespec tc;
   int                    opt;
@@ -2109,6 +2118,11 @@ int main(int argc, char *argv[]) {
   int                    save     = 0;
   int                    has_acia = 0;
   int                    indev;
+  FILE *fp2;
+  char *line = NULL;
+  size_t len = 0;
+  ssize_t lineRead;
+  char* hexString;
 
 #define INDEV_ACIA    1
 #define INDEV_SIO     2
@@ -2119,8 +2133,38 @@ int main(int argc, char *argv[]) {
   while (p < ramrom + sizeof(ramrom))
     *p++ = rand();
 
-  while ((opt = getopt(argc, argv, "Aabcd:e:fi:I:m:pr:sRS:uw8C:")) != -1) {
+  while ((opt = getopt(argc, argv, "t:Aabcd:e:fi:I:m:pr:sRS:uw8C:")) != -1) {
     switch (opt) {
+    case 't':
+      printf("%s\r\n", optarg);
+
+      fp2 = fopen(optarg, "r");
+      if (fp2 == NULL) {
+        printf("File %s failed to be opened.\r\n", optarg);
+        exit(EXIT_FAILURE);
+      }
+
+      countOfPortsToTrace = 0;
+      while ((lineRead = getline(&line, &len, fp2)) != -1) {
+        if (line[0] == 'P') {
+          hexString = line + 1;
+
+          while(hexString < line + lineRead - 1) {
+            portsToTrace[countOfPortsToTrace] = (int)strtol(hexString, NULL, 16);
+
+            printf("Enabling tracing for port %02X\r\n", portsToTrace[countOfPortsToTrace]);
+
+            countOfPortsToTrace++;
+
+            hexString += 3;
+          }
+        }
+      }
+
+      free(line);
+
+      break;
+
     case 'a':
       has_acia    = 1;
       indev       = INDEV_ACIA;
