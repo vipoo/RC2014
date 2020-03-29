@@ -124,16 +124,6 @@ void recalc_interrupts(void) {
     m6800_clear_interrupt(&cpu, IRQ_IRQ1);
 }
 
-static void int_set(int src) {
-  live_irq |= (1 << src);
-  recalc_interrupts();
-}
-
-static void int_clear(int src) {
-  live_irq &= ~(1 << src);
-  recalc_interrupts();
-}
-
 /* Serial glue: a bit different as the serial port is on chip and emulated
    by the CPU emulator */
 

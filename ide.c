@@ -75,6 +75,7 @@
 
 const uint8_t ide_magic[8] = {'1', 'D', 'E', 'D', '1', '5', 'C', '0'};
 
+#ifdef HEXDUMP
 static char *charmap(uint8_t v) {
   static char cbuf[3];
   if (v < 32)
@@ -103,6 +104,10 @@ static void hexdump(uint8_t *bp) {
     fprintf(stderr, "\n");
   }
 }
+#define HEXDUMP_DATA(d) hexdump(d);
+#else
+#define HEXDUMP_DATA(d) ;
+#endif
 
 /* FIXME: use proper endian convertors! */
 static uint16_t le16(uint16_t v) {
@@ -426,7 +431,7 @@ static int ide_read_sector(struct ide_drive *d) {
     ide_xlate_errno(&d->taskfile, len);
     return -1;
   }
-  //  hexdump(d->data);
+  HEXDUMP_DATA(d->data)
   d->offset += 512;
   return 0;
 }
@@ -441,7 +446,7 @@ static int ide_write_sector(struct ide_drive *d) {
     ide_xlate_errno(&d->taskfile, len);
     return -1;
   }
-  //  hexdump(d->data);
+  HEXDUMP_DATA(d->data)
   d->offset += 512;
   return 0;
 }

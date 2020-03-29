@@ -2030,13 +2030,16 @@ static void poll_irq_event(void) {
       acia_check_irq(acia);
     uart_check_irq(&uart[0]);
     if (!live_irq) {
-      !sio2_check_im2(sio) && !sio2_check_im2(sio + 1) && !ctc_check_im2();
+      if(!sio2_check_im2(sio))
+        if(!sio2_check_im2(sio + 1))
+          ctc_check_im2();
     }
   } else {
     if (acia)
       acia_check_irq(acia);
     uart_check_irq(&uart[0]);
-    !sio2_check_im2(sio) && !sio2_check_im2(sio + 1);
+    if (!sio2_check_im2(sio))
+      sio2_check_im2(sio + 1);
     ctc_check_im2();
   }
 }
