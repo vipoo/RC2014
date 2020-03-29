@@ -1,5 +1,5 @@
 
-CFLAGS = -Wall -pedantic
+CFLAGS = -Wall -pedantic -Werror
 
 all:	rc2014 rc2014-1802 rc2014-6303 rc2014-6502 rc2014-65c816-mini rc2014-80c188 rc2014-8085 \
 	rbcv2 searle linc80 makedisk mbc2 smallz80 sbc2g z80mc simple80
