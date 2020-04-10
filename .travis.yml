@@ -1,0 +1,36 @@
+os: linux
+dist: bionic
+language: c
+
+compiler:
+  - gcc
+
+git:
+  depth: 3
+
+before_install:
+
+install:
+
+before_script:
+
+script:
+  - make
+
+before_deploy:
+  - mkdir -p bin
+  - cp rc2014 bin/
+  - tar -czvf rc2014-${TRAVIS_TAG}.tar.gz bin
+
+deploy:
+  provider: releases
+  file:
+    - rc2014-${TRAVIS_TAG}.tar.gz
+  skip_cleanup: true
+  on:
+    tags: true
+  api-key:
+    secure: "mLNxnh6Q9I610wnWnjqvskkphPHeIHCnyCQVLN52aUWomjEZhX7Xg3XkqJKjy9XNcnSv2MgmIl4jltwAsok75QflhVFraI+f5O2WzKhcT/GY/9fS6FwOdDY7dyScFJaAZVdo9UUVfRcKSbTk2OM7aazVTOct2SmkUN8Ss4L2HP9cUWMwDA6r5ATTUL7uuXRXc6iKl+u+Qvfy/GO4UzzY7GW/trNepK95+o8FQ2LSxW6sJrkB4Mp8P+ZQBMNFXhMUTq1ePyQ1b+0+XZ17RVviGgQq9OgusbnjoR4n259S62Q9jpNrXTkZyO+/N0oTeSKS0rETk2nn8ETlfMm5fLd4GFyMy8q8/k7FnreOrgrx9PK3JcF23b+y3kE5ziB7E72qq+8JWexrveLmz2SK1YD1HamYJT7QjHvFXPaNd/zccY+cjXhfo427Mll+5DsO6LSAMnZdmw/JBXnAObLkfYEQQafNwxhB3fFIYgwikZkNyv6pjhSGEnDcfrliexCooqlFlCP1unZMnECm/e7TYqjJpWFyMlkvydgMgSGzus8774LtexK5OH50E/67Sw37K+3RwKZKgoXUQUzHZ7OwJ53gupya37yxsmCopNm0ROjyPf4wCtL0RwLj5Qjf29m/fL0AdlbfAOXmAMOpNdaZU9refznWqu5h2m4OxHP2zo5uJLI="
+
+notifications:
+  email: false

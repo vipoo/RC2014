@@ -98,3 +98,11 @@ libz80/libz80.o: libz80/z80.c libz80/z80.h lib65816/config.h
 cpu.c: lib65816/config.h
 
 include $(wildcard $(DEPFILES))
+
+ifeq ($(PREFIX),)
+  PREFIX := /usr/local
+endif
+
+.PHONY: install
+install: rc2014
+	@install -m 755 rc2014 ${DESTDIR}$(PREFIX)/bin/
