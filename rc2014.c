@@ -669,11 +669,10 @@ static uint8_t uart_read(struct uart16x50 *uptr, uint8_t addr) {
   return 0xFF;
 }
 
-#define SIO_QUEUE_SIZE 60
 struct z80_sio_chan {
   uint8_t wr[8];
   uint8_t rr[3];
-  uint8_t data[SIO_QUEUE_SIZE];
+  uint8_t data[3];
   uint8_t dptr;
   uint8_t irq;
   uint8_t rxint;
@@ -778,10 +777,10 @@ static void sio2_queue(struct z80_sio_chan *chan, uint8_t c) {
     return;
   }
   /* Overrun */
-  if (chan->dptr == SIO_QUEUE_SIZE) {
+  if (chan->dptr == 2) {
     if (trace & TRACE_SIO)
       fprintf(stderr, "Overrun.\n");
-    chan->data[SIO_QUEUE_SIZE-1] = c;
+    chan->data[2] = c;
     chan->rr[1] |= 0x20; /* Overrun flagged */
     /* What are the rules for overrun delivery FIXME */
     sio2_raise_int(chan, INT_ERR);
@@ -849,7 +848,6 @@ static void sio_reset(void) {
 }
 
 static uint8_t sio2_read(uint16_t addr) {
-  int i = 0;
   struct z80_sio_chan *chan = (addr & 2) ? sio + 1 : sio;
   if (!(addr & 1)) {
     /* Control */
@@ -881,9 +879,8 @@ static uint8_t sio2_read(uint16_t addr) {
   } else {
     /* FIXME: irq handling */
     uint8_t c     = chan->data[0];
-    for(i = 1; i <= chan->dptr; i++)
-      chan->data[i-1] = chan->data[i];
-
+    chan->data[0] = chan->data[1];
+    chan->data[1] = chan->data[2];
     if (chan->dptr)
       chan->dptr--;
     if (chan->dptr == 0)
