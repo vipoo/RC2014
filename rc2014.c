@@ -811,8 +811,11 @@ static void sio2_channel_timer(struct z80_sio_chan *chan, uint8_t ab) {
     int c = check_chario();
 
     if (sio2_input) {
-      if (c & 1)
-        sio2_queue(chan, next_char());
+      if (c & 1) {
+				if (chan->dptr == 0 && cpu_z80.IFF1 == 1 && cpu_z80.IFF2 == 1) {
+        	sio2_queue(chan, next_char());
+        }
+			}
     }
     if (c & 2) {
       if (!(chan->rr[0] & 0x04)) {
